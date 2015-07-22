@@ -1,0 +1,51 @@
+---
+
+- hosts: master
+  sudo: yes
+
+  tasks:
+    - name: create an LXC container
+      lxc_container:
+        name: test-container-u1
+        container_log: true
+        template: centos
+        state: started
+
+    - name: create an LXC container
+      lxc_container:
+        name: test-container-u2
+        container_log: true
+        template: centos
+        state: started
+
+    - name: create an LXC container
+      lxc_container:
+        name: test-container-u3
+        container_log: true
+        template: centos
+        state: started
+
+    - name: register name of containers
+      shell: lxc-ls --fancy | awk ' NR>2 { print $1 }'
+      register: host_name
+
+    - name: register ipaddress of container
+      shell: lxc-ls --fancy | awk ' NR>2 { print $3 }'
+      register: host_ip
+
+    - name: debug
+      debug: msg="{{ item.pair.name[0] }}"
+      with_items:
+        - pair: { name: "{{ host_name.stdout_lines }}", ip: "{{ host_ip.stdout_lines }}" }
+
+    - name: create inventory file
+      template: src=/Users/sankalp_singh/workspace/LXC_ansible/provision/inv.j2 dest=/Users/sankalp_singh/workspace/LXC_ansible/provision/inventory mode-0644
+      with_items:
+        - pair: { name: "{{ host_name.stdout_lines }}", ip: "{{ host_ip.stdout_lines }}" }
+      delegate_to: localhost
+      sudo: no
+
+    - name:
+      debug: msg="done"
+
+
